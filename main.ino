@@ -1,18 +1,24 @@
 /*
-  First Configuration
-  This sketch demonstrates the usage of MKR WAN 1300/1310 LoRa module.
-  This example code is in the public domain.
+
+  Datacake Arduino MKR WAN 1310 + MKR ENV Demo Firmware
+  Made for The Things Summer Academy
+
 */
 
 #include <MKRWAN.h>
 #include <Arduino_MKRENV.h>
 #include <CayenneLPP.h>
 
+// Murata Module
 LoRaModem modem(Serial1);
 
-String appEui = "YOURAPPEUI";
-String appKey = "YOURAPPKEY";
+// LoRaWAN Configuration
+// Get your devEUI from Murata Module
+#define LORAREGION EU868
+String appEui = "";
+String appKey = "";
 
+// CayenneLPP Configuration
 CayenneLPP lpp(51);
 
 void setup() {
@@ -22,14 +28,13 @@ void setup() {
   while (!Serial);
 
   // change this to your regional band (eg. US915, AS923, ...)
-  if (!modem.begin(EU868)) {
+  if (!modem.begin(LORAREGION)) {
     Serial.println("Failed to start module");
     while (1) {}
   };
 
   // Connect via LoRaWAN
-  int connected;
-  connected = modem.joinOTAA(appEui, appKey);
+  int connected = modem.joinOTAA(appEui, appKey);
 
   // Check Connectivity
   if (!connected) {
@@ -48,19 +53,18 @@ void setup() {
 
   // All Done ... idle a few
   delay(1000);
-  
 }
 
 void loop() {
 
   // Read Sensors from ENV Board
   float temperature = ENV.readTemperature();
-  float humidity = ENV.readHumidity();
-  float pressure = ENV.readPressure();
+  float humidity    = ENV.readHumidity();
+  float pressure    = ENV.readPressure();
   float illuminance = ENV.readIlluminance();
-  float uva = ENV.readUVA();
-  float uvb = ENV.readUVB();
-  float uvIndex = ENV.readUVIndex();  
+  float uva         = ENV.readUVA();
+  float uvb         = ENV.readUVB();
+  float uvIndex     = ENV.readUVIndex();  
 
   // Create LPP
   lpp.reset();
@@ -73,10 +77,9 @@ void loop() {
   lpp.addTemperature(3, uvIndex);
 
   // Send LPP Packet over LoRaWAN
-  int err;
   modem.beginPacket();
   modem.write(lpp.getBuffer(), lpp.getSize());
-  err = modem.endPacket(true);
+  int err = modem.endPacket(true);
   
   // Check for errors
   if (err > 0) {
